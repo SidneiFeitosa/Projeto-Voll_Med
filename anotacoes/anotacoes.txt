@@ -1,0 +1,1003 @@
+Quando vamos inicializar um projeto Spring, não precisamos necessariamente usar o Spring Initializr, podemos criar um projeto Maven do zero e ir adicionando as dependências manualmente, e fazendo a estrutura necessária do projeto.
+
+============spring-boot-starter-parent============
+
+"parent", quando se trata do pom.xml, é um arquivo pom.xml pai que pode ser herdado. Para fazer essa herança, basta colocarmos as informações do pom.xml que queremos como pai no nosso pom.xml alvo envolta de uma tag 
+
+  <parent>
+    </>
+  </parent>.
+
+No entanto, quando se trata do spring-boot-starter-parent, devemos tratar ele como uma dependência.
+
+============spring-boot-starter============
+
+É a dependência mais básica do Spring Boot, que traz com ela o "core" do Spring Boot.
+
+============spring-boot-maven-plugin============
+
+É um plugin que colocamos na tag de build, e irá servir para fazer o build com todas as dependências corretamente.
+
+============RODAR APLICAÇÃO SPRING BOOT============
+
+A classe principal que vai rodar a nossa aplicação Spring, por convenção, sempre terá o nome do nosso artefato e terminará com Application.
+
+Essa classe é a classe executável, ou seja, temos que ter um método main dentro dela.
+
+Para o Spring saber que aquela é a classe principal da aplicação, devemos marcá-la com a annotation @SpringBootApplication.
+
+No nosso método main devemos executar o método SpringApplication.run(<nome da classe main>.class, args);
+
+============Spring x Spring Boot============
+
+Spring é um framework dividido em módulos, com a ideia de que você só usará os módulos conforme a necessidade do projeto. Ele existe desde 2002, mas na época era preciso criar configurações extensas em XML ou uma classe Java para configurar cada módulo e cada coisa que voce ia utilizar. Foi para combater isso que o Spring Boot nasceu, tornando a tarefa de criar configurações automática e muito mais rápida e de fácil manutenção.
+
+O Spring Boot não vem como uma dependência, mas sim na tag parent, que funciona como uma herança para outro pom.xml.
+
+O Spring Boot inverteu o fluxo de rodar aplicações web Java, fazendo termo o servidor Tomcat na nossa aplicação, e não o contrário, por isso conseguimos rodar a aplicação apenas executando a nossa classe com o método main que chama o método run do SpringApplication.
+
+============Spring Dev Tools============
+
+Funciona como um live-server.
+
+Para utilizarmos no IntelliJ, precisamos marcar a opção "build automatically" e a opção de "allow auto-run mesmo quando a aplicação estiver rodando" no compiler, pois apenas ter a dependência não é o suficiente.
+
+============@RestController============
+
+É a annotation que especifica que nossa classe é um controlador REST.
+
+Precisa ter a annotation @RequestMapping, que passa o caminho inicial da requisição, como "/", por exemplo.
+
+============@GetMapping============
+
+Define que o método no RestController vai ser chamado por requisições GET.
+
+Existem outras anotações no mesmo padrão para os demais métodos HTTP.
+
+============REQUEST BODY============
+
+O corpo da requisição no Spring nada mais é do que um parâmetro do método que vai ser chamado na requisição. Porém, para o Spring entender que aquele parâmetro deve receber o corpo da requisição, precisamos marcá-lo com a annotation @RequestBody.
+
+============CORS Spring============
+
+Para acessarmos nossa API de origens diferentes, precisamos criar uma classe de configuração que irá definir as origens permitidas e os métodos HTTP permitidos a partir dessas origens. A classe deverá ficar mais ou menos assim:
+
+@Configuration
+public class CorsConfiguration implements WebMvcConfigurer {
+
+    @Override
+    public void addCorsMappings(CorsRegistry registry) {
+        registry.addMapping("/**")
+            .allowedOrigins("http://localhost:3000")
+            .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "TRACE", "CONNECT");
+    }
+}
+
+============DTO============
+
+Data Transfer Objects são um padrão de objetos feitos para representar os dados de entrada e saída de requisições na nossa API. Sempre iremos utilizar esse padrão.
+
+Nas versões mais recentes do Java, utilizamos Records para representar esses DTOs.
+
+============RECORDS============
+
+Record é um tipo de classe específico das versões mais recentes do Java, que são classes imutáveis de dados, onde não precisamos criar atributos nem métodos para termos as funções de get e etc.
+
+============ADICIONANDO DEPENDÊNCIAS============
+
+Podemos pegar as dependências diretamente do Spring Initializr indo na aba EXPLORE, que irá mostrar como o pom.xml será gerado, assim podendo copiar exatamente as dependências do jeito certo.
+
+============ Spring Data JPA============
+
+Spring Data JPA é o módulo do Spring que nos permite trabalhar com o JPA para a persistência dos dados, fazendo a conexão com o banco de dados e já usando o Hibernate como ORM.
+
+Assim que adicionamos a dependência no nosso projeto, ele tentará fazer a conexão com o banco de dados, gerando uma falha se não conseguir. Para especificarmos os parâmetros de conexão, temos que mexer no nosso arquivo application.properties, que é onde colocaremos as properties usadas na nossa aplicação.
+
+temos que passar as propriedades de forma específica, o que é meio difícil de decorar no começo, mas vou listar as de conexão com banco aqui:
+
+- spring.datasource.url=<conexão> (usa driver jdbc)
+- spring.datasource.username=<username>
+- spring.datasource.password=<password>
+
+Podemos usar YAML também, o que facilita o uso de informações externas, o que ajuda no caso de querermos ocultar a conexão ao banco, por exemplo.
+
+Algumas annotations do JPA que podemos utilizar:
+
+- @Table(name = <nome da tabela>): especifica a tabela que estará mapeada com a entidade.
+- @Entity(name = <nome>): especifica que a classe é uma entidade JPA, que estará linkada com uma entidade do nosso banco de dados.
+- @Id: especifica que é uma chave de uma entidade (PK, FK)
+- @GeneratedValue(strategy = GenerationType.IDENTITY): é uma annotation que especifica que aquele valor será gerado automaticamente pelo JPA. Passando uma strategy que irá dizer o tipo de geração automáticaque irá ser utilizada. No caso de um @Id, será IDENTITY.
+- @Enumerated(EnumType.STRING): especifica que o atributo será um enum, também passando o tipo do Enum (String, nesse caso).
+- @Embedded: usamos quando temos outra entidade dentro da nossa entidade, mas não queremos fazer um relacionamento, e sim que os atributos da outra entidade apareçam na mesma entidade.
+- @Embeddable: especifica que a classe vai ser usada com @Embedded.
+
+É importante lembrar que, mesmo tendo a annotation @Table na nossa entidade, se a tabela não existir, o JPA não irá criá-la automaticamente, o que irá gerar uma Exception.
+
+Normalmente fazemos o link com o banco de dados usando objetos DAO (Data Access Object), que vem da ideia de separarmos as regras de negócio das regras de acesso ao banco de dados, criando um objeto específico para isso e não deixando isso junto com controllers e etc., mas o Spring facilita isso e fazemos o uso de interfaces (repositories).
+
+Exemplo de uso dos DAOs:
+
+public class ProdutoDao {
+
+    private final EntityManager entityManager;
+
+    public ProdutoDao(EntityManager entityManager) {
+        this.entityManager = entityManager;
+    }
+
+    public void create(Produto produto) {
+        entityManager.persist(produto);
+    }
+
+    public Produto read(Long id) {
+        return entityManager.find(Produto.class, id);
+    }
+
+    public void update(Produto produto) {
+        entityManger.merge(produto);
+    }
+
+    public void remove(Produto produto) {
+        entityManger.remove(produto);
+   }
+
+}
+
+Assim que faríamos a persistência no banco de dados usando apenas o JPA, e não o Spring Data JPA.
+
+Um repositório é uma interface que podemos utilizar nas nossas regras de negócio e lógicas para fazer a persistência dos dados. Agora, inserir lógicas, tratamento de dados, ou acesso direto sem um controller ao nosso repositório é algo que nunca devemos fazer, pois assim como o DAO, os repositórios também servem para fazermos essa divisão, apesar de ficarem mais próximos das lógicas do que os DAOs.
+Também é interessante saber que um repositório pode tratar de um ou mais DAOs, assim podendo utilizar o mesmo repositório para entidades que possuem entidades como atributo.
+
+O padrão Repository incentiva um design orientado a domínio, o que torna mais fácil a compreensão do domínio e da estrutura de dados, além de, no Spring, tornar o nosso código mais fácil e mais legível, a partir do uso das interfaces.
+
+============JpaRepository============
+
+É a interface mãe das interfaces Repository que precisamos criar para ter a persistência dos dados no banco de dados. Sempre criaremos uma interface para cada entidade nossa, usando a convençaõ de passar o nome da entidade com "Repository" no final.
+
+Essas interfaces precisam estender a interface JpaRepository, que irá receber um generics com dois tipos após o "extends", onde o primeiro parâmetro é a entidade e o segundo o tipo do atributo @Id dela.
+
+Só de criar a interface e estender JpaRepository, já temos o nosso repository pronto para ser utilizado, apesar de podemos criar outros métodos e também sobrescrever os existentes.
+
+Para utilizar esse repository, precisamos ter um atributo na nossa classe controller que irá ser uma instância dele. Como não somos nós que fazemos a inicialização desse objeto, precisamos falar pro próprio Spring fazer isso com a annotation @Autowired, que é a annotation responsável por fazer a injeção de dependências no Spring.
+Tendo esse objeto como atributo, podemos usar os métodos disponíveis nele dentro dos nossos métodos responsáveis por tratar as requisições, como, por exemplo, o método save();, responsável por salvar os dados no banco de dados.
+
+Para instanciarmos uma entidade a partir de um DTO, precisamos de um construtor que recebe o DTO e passa os campos dele para a entidade (ou podemos usar o @AllArgsConstructor e passar os dados do DTO para ele no controller, mas isso é um saco).
+
+============LOMBOK============
+
+É uma biblioteca feita para utilizarmos annotations que geram códigos verbosos para nós, como getters e setters, toString e etc.
+
+Algumas annotations:
+
+- @Getter: gera os getters.
+- @NoArgsConstructor: gera o construtor default.
+- @AllArgsConstructor: gera um construtor com todos os atributos.
+- @EqualsAndHashCode(of = <campo(s) usado(s) para fazer o HashCode>): gera o equals(); e o hash();, por padrão usando todos atributos para isso.
+
+============FLYWAY MIGRATIONS============
+
+Ferramentas de Migrations são ferramentas que nos dão o controle do versionamento do nosso banco de dados utilizado na aplicação. O FLYWAY é a ferramenta do Migrations que o Spring dá suporte, e ela servirá para fazermos todas as mudanças na estrutura do banco de dados que precisarmos, como criação de tabelas, modificação, exclusão, etc.
+
+O FLYWAY não é um módulo do Spring, mas o Spring tem integração com ele, deixando mais fácil de utilizá-lo.
+
+As migrations no Spring sempre ficam no diretório:
+
+"src/main/java/resources/db/migration"
+
+São arquivos .sql com scripts feitos por nós do que vai ser feito na migration.
+(normalmente temos que criar o diretório "db/migration")
+
+Sempre que formos mexer em migrations, devemos parar a nossa aplicação.
+
+**MIGRATIONS EXECUTADAS NÃO PODEM SER MODIFICADAS**
+
+Se precisamos fazer uma alteração, devemos criar outro arquivo de migration com um versionamento acima do anterior.
+
+Se acontecer algum erro com a migration, devemos ir no banco de dados e executar o seguinte script:
+
+"delete from flyway_schema_history where success = 0;"
+
+Pode ser que alguma tabela ou atributo sejam criados em uma execução de migration com falha. Nesse caso, podemos apenas deletar o banco de dados e criá-lo novamente, que assim todas as migrations serão executadas do zero.
+
+============PADRÃO NOMENCLATURA .sql FLYWAY============
+
+Nos arquivos .sql do FLYWAY sempre temos que seguir o padrão de nomenclatura:
+
+"V<número versionamento>__<nome descritivo>.sql"
+
+Os scripts sql são executados automaticamente.
+
+Os scripts sql são scripts sql normais, mudando conforme o banco de dados que estamos utilizando.
+
+============@Transactional============
+
+Precisamos dessa annotation em métodos de controladores que irão executar uma transação direta de dados com o nosso banco de dados, seja ela um create, um read, um update ou um delete.
+
+============BEAN VALIDATION============
+
+Bean Validation é uma especificação de validação do Java e o Spring tem um módulo chamado "Validation" que facilita o uso dessa especificação.
+
+Precisamos fazer validações em parâmetros recebidos por requisições à nossa API, ou seja, precisamos fazer essas validações no DTO que irá guardar os dados recebidos no corpo da requisição.
+
+A validação no Spring é feita por meio de annotations, o que torna muito mais fácil e legível fazer essas validações.
+Temos que passar a annotation @Valid no método do controller que está recebendo o corpo da requisição para as verificações serem feitas.
+
+Algumas annotations:
+
+- @NotNull: especifica que o atributo não pode ser null.
+- @NotBlank: especifica que o atributo não pode estar vazio, mesmo que não seja null (também não deixa ser null).
+- @Email: especifica que a String deve estar no formato correto de um email.
+- @Pattern(regexp = <regex>): especifica um padrão que a String deve seguir utilizando regex.
+- @Valid: especifica que um atributo também tem que ser validado, e é usado no caso de termos outro DTO dentro do nosso DTO. Lembrando que temos que ter as validações dos campos no outro DTO também.
+
+============REQUISIÇÕES GET============
+
+Para darmos respostas à requisições GET, usamos a annotation @GetMapping no nosso controller. Podemos ter outro objeto DTO para devolver como resposta à requisição, devolvendo apenas os dados realmente necessários do nosso objeto que está sendo acessado.
+
+Para pegarmos os registros do nosso banco de dados, podemos usar os métodos de "find" do nosso repository, que irão retornar um ou mais registros da nossa entidade, tendo o tipo do objeto como a classe da entidade.
+Como temos que retornar uma coleção de objetos DTO, apenas usar esses métodos e tentar retornar o retorno deles na nossa resposta não dá certo, pois o tipo dos objetos retornados ainda não foi convertido para a nossa classe DTO. Para fazermos isso, podemos usar stream() e map():
+
+"return repository.findAll().stream().map(MedicoDTOListagem::new).toList();"
+
+Nesse exemplo, o map mapeia cada objeto do fluxo de dados para outro tipo, MedicoDTOListagem, nesse caso, usando o próprio construtor do record DTO como método, que recebe um objeto do tipo Medico, e transforma em uma lista desse tipo a partir da lista que tínhamos. 
+
+Podemos ter construtores em Records, mas é importante lembrar que esses construtores personalizados sempre têm que usar o construtor padrão dos records, que é o construtor que recebe todos os atributos que declaramos na declaração do Record. Chamamos esse construtor da seguinte forma:
+
+"this(<parâmetros recebidos no record...>);"
+
+Sempre é bom usar DTOs, tanto para dados que estão sendo recebidos na API quanto para dados que estão sendo retornados por ela.
+
+============PAGINAÇÃO============
+
+Paginação é dividir o retorno das requisições get em páginas, devolvendo apenas um certo número de objetos por página.
+
+O Spring já possui uma funcionalidade que faz essa paginação para nós, não precisamos implementar na mão. Essa funcionalidade está na interface Pageable, e podemos receber um objeto com esse tipo por parâmetro no nosso método.
+
+Quando recebemos esse objeto, podemos passar ele como parâmetro do método findAll(); do repository, o que fará com que o nosso retorno não possa ser mais uma List, e sim uma Page.
+O método findAll();, quando usado com um Pageable, já tem um método map(); que funciona do mesmo jeito que o map(); de Stream, mas já retornando uma Page que contém os objetos retornados, sem a necessidade de usarmos um método toList();, ou algo do tipo.
+
+@GetMapping
+public Page<MedicoDTOListagem> listar(Pageable pageable) {
+    return repository.findAll(pageable).map(MedicoDTOListagem::new);
+}
+
+Quando utilizamos a paginação do Spring e implementamos nosso código dessa forma, a resposta da requisição virá de forma diferente, tendo os registros dentro de um array "content" e as informações sobre a paginação em um objeto "pageable", o que é útil para o front saber fazer melhor a paginação.
+
+Por padrão, uma Page sempre terá 20 registros nela, mas podemos mudar isso utilizando os parâmetros "size=<número de registros na página>" e "page=<número da página a ser exibida>" como query string na requisição à nossa API. O índice das páginas começa no 0, assim como em listas. O Spring lê essa query string automaticamente.
+
+============ORDENAÇÃO============
+
+Por padrão, os registros sempre virão na mesma ordem em que eles foram inseridos no banco de dados, mas nós podemos mudar essa ordem utilizando recursos do Spring.
+
+Para mudar a ordem dos registros retornados na requisição, basta colocarmos o parâmetro "sort=<atributo utilizado na ordem>,<asc ou desc>" na query string, assim fazendo a ordenação a partir de um atributo da nossa entidade, podendo escolher se queremos na ordem crescente ou decrescente com os parâmetros "asc" ou "desc" após a vírgula (por padrão é asc).
+
+Podemos juntar parâmetros de ordenação e paginação na nossa query string sem problema algum. Exemplo:
+
+"http://localhost:8080/medicos?size=10&page=0&sort=nome,asc"
+
+============@PageableDefault============
+
+Por padrão, o Spring irá usar o size de 20 registros e nenhum sort, mas podemos mudar isso com essa annotaion, usando ela da seguinte forma:
+
+@PageableDefault(size = <int tamanho>, sort = {"<atributos>"})
+
+Sim, podemos ordenar por mais de um atributo, por isso precisamos passar um array com os nomes dos atributos usados na ordenação (em String).
+
+Também podemos mudar a ordem padrão da direção (asc ou desc) usando o parâmetro "direction = Sort.Direction.<ASC ou DESC>".
+
+Se passarmos uma query string especificando esses comportamentos, essa query string irá sobrescrever o padrão especificado por nós.
+
+Podemos mudar o nome dos parâmetros recebidos na query string pelo nosso arquivo "application.properties". Exemplo:
+
+spring.data.web.pageable.page-parameter=pagina
+spring.data.web.pageable.size-parameter=tamanho
+spring.data.web.sort.sort-parameter=ordem
+
+Podemos mostrar o sql gerado pelo Hibernate no console especificando que queremos isso no "application.properties" também.
+
+============REQUISIÇÕES PUT============
+
+É sempre uma boa prática retornar o campo de id dos nossos objetos em requisições GET, pois o front-end utilizará esse campo para mandar requisições PUT, DELETE, etc.
+
+Para modificarmos um registro no nosso banco de dados, temos que modificar a nossa entidade JPA, que pegamos por meio do id, utilizando o método findById(); do repository, por meio de um objeto DTO com os campos que queremos permitir a alteração. Normalmente iremos criar um DTO novo, pois se usarmos um que já tínhamos feito, todas as validações que colocamos serão realizadas, o que não é bom, pois a maioria dos campos não devem ser obrigatórios em uma modificação.
+
+Para a modificação realmente ocorrer, precisamos ter um método na nossa entidade que recebe o DTO de atualização e atualiza os campos com base nos campos passados, fazendo as validações nesse método mesmo. No método que irá responder à requisição PUT, devemos chamar esse método de atualização, sem nem chamar nenhum método do repository, pois só de ter as annotations @PutMapping e @Transactional, o Spring irá entender que se trata de uma atualização e irá atualizar os dados no banco de dados também.
+
+============EXCLUSÃO LÓGICA============
+
+Exclusão lógica é sinalizar no nosso banco de dados e no sistema que um usuário está inativo ao excluí-lo, em vez de realmente excluir o registro dele.
+
+============REQUISIÇÕES DELETE============
+
+Nas requisições DELETE, também utilizaremos o id da nossa entidade a ser deletada, mas não precisamos passar um corpo na requisição para isso, basta usarmos um parâmetro dinâmico na URL, que definimos na própria annotation @DeleteMapping dessa forma: @DeleteMapping("/{parametro}"). Para usarmos esse parâmetro recebido dentro do nosso método que responde às requisições DELETE, temos que receber um parâmetro no método com o mesmo nome que demos ao parâmetro na annotation e passar a annotation @PathVariable nele.
+
+O código irá ficar mais ou menos assim:
+
+@DeleteMapping("/{id}")
+@Transactional
+public void excluir(@PathVariable Long id) {
+    repository.deleteById(id);
+}
+
+Dessa forma excluímos mesmo o registro do banco de dados, o que não é uma exclusão lógica.
+
+============EXCLUSÃO LÓGICA COM DELETE============
+
+Funciona basicamente da mesma forma que um PUT, pois só iremos mudar o campo de status para false (0 no banco de dados).
+
+============FILTRAR LISTAGEM============
+
+Se seguirmos o padrão de nomenclatura dos métodos do repository, basta criarmos um método novo na interface e ele já estará disponível para uso com uma lógica pronta checando o valor de algum atributo. Esse padrão é:
+
+"findBy<Atributo><Valor>();" ("findByStatusTrue();", por exemplo)
+
+============RETORNANDO STATUS CODE CORRETO============
+
+Quando um método nosso retorna void, por padrão, o retorno que o Spring dará será um status 200 (ok) e nenhum corpo na resposta. Podemos mudar isso utilizando os métodos estáticos da classe ResponseEntity, que têm nomes descritivos com o tipo do status retornado. Por exemplo:
+
+"return ResponseEntity.ok().build();"
+
+Dessa forma, retornariamos um status 200 (ok).
+
+Podemos definir que o retorno da ResponseEntity terá um corpo. Para isso, usamos Generics, colocando dentro dos sinais de menor e maior o objeto que vai ser o corpo da resposta. Por exemplo:
+
+"ResponseEntity<Page<MedicoDTOListagem>>"
+
+Para realmente retornar essa ResponseEntity contendo um corpo, basta passarmos como parâmetro no método estático que gera a ResponseEntity o objeto que queremos como corpo. Por exemplo:
+
+"return ResponseEntity.ok(<objeto>).build();"
+
+============201 CREATED============
+
+O status code 201 (created) é o status code que deve ser retornado em requisições POST, que cadastraramalgum item no nosso sistema a partir da requisição. Além de retornar o status code 201, temos que retornar o novo registro com as informações cadastradas no corpo da resposta e um header chamado "Location", que irá especificar ao front-end onde aquele recurso está disponível na nossa API.
+
+Para retornarmos um "ResponseEntity created" no Spring, precisamos usar o método:
+
+"ResponseEntity.created(<URI>).body(<objeto>);"
+
+Essa URI recebida como parâmetro no método created(); é a URI que vai ser utilizada no header "Location", e para gerá-la utilizamos a classe UriComponentsBuilder, que recebemos por parâmetro no nosso método. Código de exemplo para gerar a URI a partir da classe UriComponentsBuilder:
+
+"uriBuilder.path("/medicos/{id}").buildAndExpand(medico.getId()).toUri();"
+
+O que esse código faz é montar a URI com o caminho padrão da nossa API, sem termos que especificá-lo no código. Por exemplo, "http://localhost:8080/".
+
+Importante lembrar que devemos gerar a URI após ter salvo o registro no banco de dados, pois se fazemos isso antes, a entidade que pegamos o id ainda não possui o id, já que esse é um valor gerado pela JPA quando salvamos a entidade no banco de dados.
+
+No método body();, passamos um DTO de nossa escolha.
+
+============DETALHAMENTO============
+
+Já temos um CRUD completo na nossa API, mas normalmente isso não é o suficiente. Na maioria dos casos, também precisamos de algum método que detalhe um registro buscando-o por id.
+
+Para fazer isso é bem simples, basta acessarmos o registro desejado por meio do id e retorná-lo usando o nosso DTO de detalhamento. Tudo isso sempre retornando ResponseEntity. 
+
+============ERROS NA API============
+
+Por padrão, o Spring devolve os erros com o stack trace completo do que deu erro no nosso código, juntamente com outras informações, como mensagem do erro, tudo isso em uma resposta com código 500. Isso acontece até nos casos de buscar um registro que não existe no nosso banco de dados por uma requisição de detalhamento.
+
+Isso não é interessante, pois estamos expondo informações desnecessárias sobre o código da nossa API, mas podemos mudar o tratamento de erros do Spring e deixarmos de acordo com a nossa necessidade.
+
+Podemos mudar o padrão com que o Spring lida com as respostas desses erros pelo arquivo application.properties, assim podendo fazê-lo não mandar o stack trace por padrão. Para isso usamos a propriedade:
+
+"server.error.include-stacktrace=never"
+
+Importante lembrar que só isso não é suficiente em todos os casos, pois devemos sempre nos preocupar em devolver o status code correto, sendo que o Spring sempre retornará 500, o que não é o ideal.
+
+É impossível decorar todas as propriedades, por isso sempre podemos consultar a documentação nesse link: "https://docs.spring.io/spring-boot/docs/current/reference/html/application-properties.html", sabendo qual é o tipo de property que queremos.
+
+============TRATANDO ERRO 404============
+
+Da forma que eu fiz, cada método tinha que implementar a lógica de retornar um erro 404 como resposta, mas o Spring tem uma solução pra tratar isso de forma global para todos os métodos que gerarem um tipo específico de Exception.
+
+A solução é criar uma classe com a annotation @RestControllerAdvice, que fará com que o Spring saiba que aquela classe é uma classe que ele tem que carregar e que será utilizada pelos @RestController, e dentro dela colocar métodos com a annotation @ExceptionHandler(EntityNotFoundException.class) contendo a lógica de retorno da resposta no caso de acontecer uma Exception daquele tipo.
+
+Importante lembrar que podemos receber por parâmetro a Exception que estamos tratando no método @ExceptionHandler, assim podendo extrair informações dela.
+
+============TRATANDO ERRO 400============
+
+Por padrão, o Spring envia uma série de informações em erros de bad request, que muitas vezes são desnecessariamente complexas e não tão úteis. Por isso é importante tratarmos as respostas 400, devolvendo apenas as informações corretas sobre o que está errado na requisição do cliente.
+
+Para fazer o tratamento da resposta, criamos outro método @ExceptionHandler, só que dessa vez para tratar a Exception "MethodArgumentNotValidException".
+
+Usamos o método getFieldErrors(); da própria Exception, que retorna uma List<FieldError> (FieldError é uma classe que tem vários getters que nos permitem tirar informações sobre o erro que deu no campo específico), que usamos para converter em um DTO com as informações que queremos passar para o cliente sobre o que está errado nos campos da requisição. Exemplo:
+
+@ExceptionHandler(MethodArgumentNotValidException.class)
+public ResponseEntity tratar400(MethodArgumentNotValidException e) {
+    List<FieldError> erros = e.getFieldErrors();
+    List<CampoInvalidoDTO> camposInvalidos erros.stream().map(CampoInvalidoDTO::new).toList();
+
+    return ResponseEntity.badRequest().body(camposInvalidos);
+}
+
+private record CampoInvalidoDTO(String campo, String mensagem) {
+    public CampoInvalidoDTO(FieldError erro) {
+        this(erro.getField(), erro.getDefaultMessage());
+    }
+}
+
+Se mandarmos na requisição o Header "Accept-Language" com o valor "pt-br", as respostas virão em português. Isso funciona para algumas línguas, mas é um número limitado.
+
+Podemos também mudar as mensagens de erro para cada campo específico quando a requisição não estiver de acordo com a validação.
+
+Para isso, basta colocarmos o parâmetro "message = <mensagem>" nas próprias annotations de validação que colocamos nos DTOs. Também podemos colocar essas mensagens em um arquivo "ValidationMessages.properties" e lê-las usando a sintaxe:
+
+message = "{<nome da propriedade>}".
+
+Exemplo:
+
+@NotBlank(message = "{nome.obrigatorio}")
+String nome;
+
+============Spring Security============
+
+É o módulo do Spring feito para trabalharmos com autenticação e autorização, tanto em aplicações web tradicionais, quanto em APIs.
+
+Normalmente em aplicações web tradicionais, temos o modelo Steteful, o que significa que quando um usuário loga na aplicação, ele tem uma sessão que pertence a ele onde são guardadas várias informações específicas dele no servidor, para quando ele voltar continuar de onde ele parou. Quando se trata de uma API REST, ela deve ser Stateless, ou seja, não deve ter estado nenhum. O usuário deve fazer a requisição, se autenticar, se tiver acesso, a requisição fará o que tem que ser feito, e acabou.
+
+O Spring Security é bem flexível e nos deixa  trabalhar desses dois modos, assim como usar diversos métodos nesses modos.
+
+Principais objetivos do Spring Security:
+
+- Autenticação
+- Autorização
+- Proteção contra ataques (CSRF, clickjacking, etc.)
+
+Existem vários modos de lidarmos com autenticação em APIs, mas a mais comum é utilizando tokens. No curso, utilizaremos o JWT (JSON Web Token).
+
+Fluxo de autenticação com JWT no Spring:
+
+- Usuário envia informações de login como requisição para a API;
+- A API checa no banco de dados se existe um usuário com as informações de login passadas, e se a senha bate;
+- Se o usuário realmente existir e estiver tudo de acordo, a API gera e devolve um token JWT, para o client.
+
+Esse token JWT tem que ser guardado pela aplicação client-side, pois ele será o que fará com que o login continue valendo.
+
+Com o token já gerado, o client dispara a requisição com um Header chamado "Authorization", com o valor de Bearer TOKEN_JWT, que irá incluir o token na requisição. Se o token estiver certo e ainda for válido, o Spring processará a requisição normalmente, se não, ele irá bloquear a requisição.
+
+Um problema que podemos ter com o uso do JWT é a expiração do token, que normalmente expira por volta de 10 minutos, o que normalmente faria com que o client tivesse que enviar outra requisição de login quando a expiração ocorresse. Isso não é nada prático e não é uma boa ideia.
+
+Para combater isso existe o "refresh token", que é um token que demora mais para expirar e é gerado um novo a cada requisição feita com autenticação JWT. Ou seja, enquanto o usuário estiver mandando requisições pelo client com token JWT, a API retornará um novo token para cada requisição, que será o token utilizado na próxima requisição feita pelo usuário, assim fazendo com que a expiração demore mais e o usuário só precise fazer a autenticação após um período maior de tempo sem ter feito requisições para a API.
+
+Por padrão, quando adicionamos o Spring Security no nosso projeto, ao iniciar a API ele irá gerar uma senha aleatória para login com o usuário "user" e bloquear qualquer requisição que não esteja logada com essas credenciais. Se tentamos disparar uma requisição pelo navegador sem estarmos logados, somos redirecionados para uma página de login poadrão do Spring Security. Usamos isso apenas para desenvolvimento, pois em produção não faz sentido usar o padrão do Spring Security. Além de que esse modelo funcionaria apenas em aplicações web Stateful, o que não é o caso de uma API REST, onde uma tela de login é responsabilidade exclusiva do front-end.
+
+============APLICANDO AUTENTICAÇÃO============
+
+Para fazermos a autenticação e autorização do jeito que precisamos na nossa API, precisaremos ter uma nova entidade chamada "Usuario", assim como uma nova tabela no banco que irá armazenar esses usuários.
+
+Quando armazenamos senhas dos usuários, não podemos armazenar a senha em si, pois o texto exato da senha ficaria armazenado no banco de dados e alguém mal intencionade poderia facilmente aces´-la e usá-la. Para combater isso, usamos algoritmos de "hashing", que geram Strings muito maiores e de difícil dedução, assim só concedendo o acesso quando o usuário digitar a senha que será convertida exatamente para o hash guardado no banco de dados.
+
+Existem muitos algoritmos de hashing populares e muitos que não são mais considerados seguros, mas o que utilizaremos será o Bcrypt, muito popular hoje em dia.
+
+Para todas as ações que iremos fazer na tabela dos usuários no banco de dados, utilizaremos o repository normalmente. Porém, como estamos trabalhando com o Spring Security, temos que criar uma classe com a annotation @Service e que implementa a interface "UserDetailsService", para assim o Spring Security já ler essa classe automaticamente, sem termos que injetá-la em nenhum lugar, e usá-la para fazer a autenticação corretamente.
+
+Essa classe @Service terá que ter um método:
+
+"loadUserByUsername(String username) throws UsernameNotFoundException"
+
+que é o método por onde acessaremos o repository dos usuários e retornaremos o usuário procurando ele por login (username).
+
+Importante lembrar que podemos usar o padrão de nomenclatura dos repositories para já termos um método que busca automaticamente o usuário pelo atributo de login, sem termos que criar uma lógica na mão para isso. 
+Por exemplo:
+
+"UserDetails findByLogin(String login);"
+
+UserDetails é uma classe do Spring Security que representa os detalhes do usuário.
+
+Precisamos especificar ao Spring Security que queremos que ele trabalhe de forma Stateless, pois o padrão dele é Stateful. Não faremos isso por meio do application.properties, e sim por uma classe de configuração, pois isso não é uma configuraçãozinha básica, iremos mudar bastante coisa.
+
+Para o Spring saber que essa é uma classe de configuração, passamos a annotation @Configuration nela juntamente com a annotation @EnableWebSecurity, que especificará que, além de ser uma classe de configuração, é uma classe de configuração de como o Spring Security irá se comportar.
+
+Essa classe deve ter um método que retorna um objeto do tipo "SecurityFilterChain", que é a interface do Spring Security usada para configurar os processos de autenticação e autorização no Spring Security. Para retornar esse objeto, utilizaremos outro objeto recebido por parâmetro, que dessa vez será do tipo "HttpSecurity", que tem alguns métodos para buildarmos o SecurityFilterChain.
+
+Como o JWT já é uma proteção contra ataques CSRF, precisamos desativar a proteção do Spring Security contra esses ataques que já vem por padrão. Para isso usamos os métodos do HttpSecurity:
+
+".csrf().disable()"
+
+Como queremos que o Spring Security trabalhe de forma Stateles, precisamos passar os métodos:
+
+".sessionManagement().sessionCreationPolicy(
+    SessionCreationPolicy.STATELESS
+)"
+
+Para o Spring conseguir usar esse objeto retornado pelo nosso método, temos que anotar o nosso método com a annotation @Bean, que é a annotation que especificar que aquele retorno é um Bean que pode ser utilizado tanto automaticamente pelo Spring, quanto injetado por nós em alguma classe.
+
+Fazendo tudo isso, desabilitamos o padrão do Spring Security e agora ele não checa mais se o usuário está autenticado e autorizado.
+
+============CONTROLLER DE AUTENTICAÇÃO============
+
+Para o fluxo de autenticação ser realmente aplicado e conseguirmos autenticar por meio de uma requisição, precisamos ter um controller que vai ser o responsável por tratar essa requisição e fazer a autenticação do usuário.
+
+Nesse controller, precisaremos chamar o nosso service responsável por fazer a autenticação, mas não podemos fazer isso diretamente. Quem chamará esse service será outra classe que injetamos no nosso controller, a classe AuthenticationManager.
+
+Nesse objeto AuthenticationManager, usaremos o método "authenticate(<token>);", que retornará um objeto do tipo Authentication, que precisamos guardar em uma referência.
+
+Ainda não temos esse token que o método espera como parâmetro, ou seja, precisamos gerá-lo. Para isso utilizaremos um objeto:
+
+"new UsernamePasswordAuthenticationToken(<login>, <senha>);"
+
+que será o nosso token gerado a partir dos atributos passados na requisição, recebidos no Spring como um DTO.
+
+Com o token gerado, passamos ele para o método authenticate();
+
+Tem um detalhe importante, por padrão o Spring não saberá injetar automaticamente o objeto AuthenticationManager, o que gera um erro ao iniciar a aplicação. Para o Spring injetar automaticamente esse objeto com a annotation @Autowired, temos que mudar as configurações do Spring. Como isso é uma configuração de segurança que precisamos modificar, faremos isso na classe de configuração de segurança que já criamos no projeto.
+
+Na classe de configurações de segurança precisamos de outro método, agora um que irá retornar um @Bean do tipo AuthenticationManager. Para gerarmos esse @Bean e retornarmos ele com o nosso método, precisamos receber um objeto do tipo AuthenticationConfiguration como parâmetro no nosso método. Tendo o objeto, basta retornarmos o retorno do método getAuthenticationManager(); que teremos como injetar o AuthenticationManager no nosso controller por meio do @Autowired.
+
+Além disso, temos que especificar para o Spring o tipo de algoritmo de hashing que estamos utilizando, que é BCrypt, no caso, pois, por padrão, ele não irá saber qual algoritmo usar quando chamamos os métodos de gerar token e autenticar. Criaremos um método na nossa classe de configuração de segurança que irá retornar um @Bean do tipo "PasswordEncoder" e irá retornar um "new BCryptPasswordEncoder();.
+
+Ainda temos que implementar a interface UserDetails na nossa entidade Usuario, pois só assim o Spring saberá quais atributos da entidade são o login e senha. Essa interface nos fará implementar vários métodos que irão retornar informações que especificam uma série de coisas sobre o usuário. O que interessa para nós são os métodos getter "getUsername();" e "getPassword();".
+
+Um método importante também é o "getAuthorities();", que precisa retornar uma "Collection<? extends GrantedAuthority>", que é uma coleção contendo as permissões do usuário representado na entidade. Como no projeto só temos uma única permissão geral, iremos apenas colocar como padrão:
+
+"return List.of(new SimpleGrantedAuthority("ROLE_USER"));"
+
+O padrão de nomenclatura dos acessos é começar com "ROLE_" e terminar com o nome da role em letra maiúscula.
+
+============GERANDO TOKEN JWT============
+
+Para gerar o token JWT e devolvê-lo na resposta, precisamos usar alguma biblioteca que gera o token de forma correta. No caso, iremos utilizar uma biblioteca que não é um módulo do Spring, e sim uma biblioteca avulsa que serve para gerar os tokens. (Importante lembrar que mesmo não sendo um módulo do Spring, nada nos impede de fazermos a nossa classe geradora de tokens se tornar um @Service que podemos usar na injeção de dependências no nosso controller.)
+
+Entrando no jwt.io, temos uma lista com várias bibliotecas que geram tokens JWT. No curso iremos usar a Auth0.
+
+Para gerarmos o token, precisamos criar uma instância da classe Algorithm, que representará o algoritmo utilizado para gerar o token. No curso utilizaremos o HMAC256, que é um algoritmo mais simples que funciona a partir de uma senha que passamos por parâmetro no método:
+
+"Algorihtm algorithm = Algorithm.HMAC256(<senha>);"
+
+Dessa forma temos o algoritmo que vai ser utillizado na hora de gerar o token, mas ainda não temos o token. Para realmente gerar o token, precisamos usar o método "JWT.create();", que pode ser continuado com vários métodos que nos fazem poder especificar quem gerou o token, normalmente passando o nome da nossa API, e o algoritmo usado para assinalar o token, por exemplo.
+
+Alguns métodos de exemplo:
+
+- withIssuer(<String>): especifica quem gerou o token.
+- withSubject(<identificador do usuário>): especifica qual usuário é dono do token gerado.
+- withClaim(<chave>, <valor>): serve para colocar informações no nosso token por meio de chave-valor.
+- withExpiresAt(<Date || Instant>): especifica até quando o token vai ser válido.
+- sign(<Algorithm>): especifica o algoritmo a ser utilizado para assinalar o token.
+
+Importante lembrar que a referência Authentication que temos no controller de autenticação possui um método "getPrincipal();", que retorna um Object que é o usuário que chamou a autenticação, podemos fazer um type casting com ele para transformá-lo em usuário e usá-lo para ser o dono do token.
+
+Código exemplo:
+
+    public String gerarToken(Usuario usuario) {
+        try {
+            Algorithm algorithm = Algorithm.HMAC256("abc@1234");
+            return JWT.create()
+                    .withIssuer("Voll.med API")
+                    .withSubject(usuario.getLogin())
+                    .withExpiresAt(getExpiracao())
+                    .sign(algorithm);
+        } catch (JWTCreationException e) {
+            throw new RuntimeException("Falha ao gerar o token JWT");
+        }
+    }
+
+    private Instant getExpiracao() {
+        return LocalDateTime.now().plusMinutes(10).toInstant(ZoneOffset.of("-03:00"));
+    }
+
+No nosso controller devemos criar um DTO com apenas um campo, que será  o do token. Temos que fazer isso para seguir o padrão de retornar um JSON nas nossas respostas, assim seguindo o padrão que estabelecemos e as boas práticas.
+
+também devemos ocultar a senha utilizada no HMAC256. Para isso podemos criar uma propriedade nossa (sem seguir as padrões do Spring) no arquivo application.properties, utilizando uma variável de ambiente para ler a senha pelo arquivo. Exemplo:
+
+"jwt.token.password=${JWT_PASSWORD:<padrão>}"
+
+Se o Spring não encontrar essa variável de ambiente no nosso computador, ele irá usar o que passarmos depois do ":" como padrão. Assim não precisamos nos preocupar em criar essa variável de ambiente na nossa máquina local.
+
+É essa sintaxe que usamos para ler variáveis de ambiente no application.properties.
+
+Para lermos propriedades nossas que colocamos no application.properties precisamos utilizar a annotation @Value("${<nome da propriedade>}") no atributo que queremos atribuir o valor da propriedade.
+
+Com todos esses passos seguidos, temos a nossa autenticação já gerando o token e tudo mais, mas ainda não estamos fazendo nenhuma autorização, ou seja, mesmo sem fazer a autenticação ainda conseguimos disparar qualquer requisição que quisermos.
+
+============AUTORIZAÇÃO============
+
+Para aplicarmos a autorização, precisamos verificar se a requisição tem um token válido antes mesmo de ela chegar no controller, pois se fôssemos tratar isso no controller, isso ia gerar muita repetição de código.
+
+Para isso, precisamos de um interceptador, alguma coisa que vai receber a requisição antes de passá-la para o controller. Um filter faz exatamente isso e é o que iremos usar.
+
+Filters não são exclusividade do Spring, se estivéssemos desenvolvendo um projeto Java EE, muito provavelmente também usariamos algo assim.
+
+============DispatcherServlet============
+
+É a classe do Spring MVC que controla todas as requisições e manda elas para os controllers posteriormente.
+
+============HandlerInterceptor============
+
+É a classe do Spring MVC responsável por interceptar as requisições mandadas do DispatcherServlet para o controller. As requisições sempre passam pelo HandlerInterceptor.
+
+============Filter || HandlerInterceptor============
+
+A diferença entre esses dois é que o Filter é uma especificação dos próprios Servlets, enquanto o HandlerInterceptor é uma classe do Spring mesmo.
+
+Enquanto um Filter irá filtrar a requisição antes mesmo de o Spring ler ela, o HandlerInterceptor irá lê-la somente após ela ter passado pelo DispatcherServlet, o que faz com que a gente consiga ter várias informações que o Spring passa para a gente, como o controller responsável por responder àquela requisição e etc.
+
+Podemos usar tanto um quanto o outro para fazer a autenticação, os dois vão cumprir o mesmo papel nesse caso.
+
+Filter sempre chama o próximo Filter até não tiver mais Filters e a requisição chegar no controller.
+
+============APLICANDO FILTER============
+
+Apesar de que iremos usar Filter no curso, iremos usar um filter específico do Spring, que nos dá muitas facilidades para implementá-lo. Em vez de implementar a interface Filter, iremos estender a classe OncePerRequestFilter, que é uma classe Filter do Spring que implementa a interface Filter e é executado apenas uma vez por request. Precisamos sobrescrever o método "doFilterInternal(<args>);", que é o método que irá aplicar realmente o filtro.
+
+Como queremos que o Spring carregue a nossa classe Filter automaticamente, precisamos marcar ela com a annotation @Component, que diz para o Spring que aquela classe é um componente genérico que precisa ser carregado por ele.
+
+============doFilterInternal(<args>);============
+
+É o método que irá aplicar o nosso filtro. Parâmetros que ele recebe:
+
+- HttpServletRequest request: a requisição que está sendo filtrada.
+- HttpServletResponse response: a resposta do Servlet à nossa requisição.
+- FilterChain filterChain: a cadeia de filtros existentes. Se existirem mais filtros, ele passa para o próximo, se não, vai para o controller. Para isso acontecer, precisamos chamar o método "doFilter();" do FilterChain passando o request e o response como parâmetro.
+
+Apenas seguindo estes passos o nosso filtro já está funcionando, mas ainda temos que fazer a lógica de checar o token e passar ou não na autorização.
+
+============RECUPERANDO O TOKEN============
+
+Precisamos validar o token, ou seja, ver se ele realmente foi gerado pela nossa API e etc.
+
+O token não deve ir no corpo da requisição, e sim no Header "Authorization", que é o Header específico para mandarmos a informação de autorização, no nosso caso o JWT. Normalmente colocamos o nosso token após o prefixo "Bearer", por questões de boa prática e para evitar erros.
+
+Para pegarmos esse Header no nosso Filter, basta utilizarmos o método "getHeader(<nome do Header>);" do nosso HttpServletRequest. Se ele não tiver sido enviado, vai ficar como nulo. Nesse caso podemos jogar uma RuntimeException com uma mensagem personalizada e devolver um DTO com essa mensagem a partir de um método @ExceptionHandler.
+
+Assim já temos o token enviado no Header da requisição, mas ainda não temos a lógica de validar esse token.
+
+============VALIDANDO TOKEN============
+
+Faremos a validação na própria classe @Service responsável por gerar o nosso JWT.
+
+Na própria documentação da biblioteca utilizada temos um exemplo de como fazer isso, e é muito parecido com a forma que geramos o JWT.
+
+Utilizamos o método "JWT.require(<Algorithm>)" seguido de métodos que irão "buildar" a nossa verificação. Após esses métodos, utilizamos o método "verify(<token>)" com o token que veio na requisição. Se o token for válido, podemos cahamr outros métodos, como o "getSubject();", que irá retornar o usuário dono daquela chave.
+
+Precisamos de um Algorithm com a mesma senha do que utilizamos para gerar o JWT.
+
+Tudo isso deve estar dentro de um try/catch, pois se a verificação falhar será gerada uma JWTVerificationException.
+
+Dessa forma nós já estamos validando se o usuário tem a autorização de fazer aquela requisição, mas ainda não especificamos isso para o Spring, ou seja, por mais que o token seja enviado e a requisião passe, o usuário não está sendo autenticado novamente, pois a nossa API é Stateless. Temos que especificar essa autenticação para o Spring.
+
+============AUTENTICANDO USUÁRIO============
+
+Para fazer essa autenticação, precisaremos mudar a nossa classe @Configuration que cuida de como o Spring Security se comporta.
+
+Utilizaremos o método "authorizeHttpRequests()" para dizer que as requisições precisam de uma autorização e autenticação juntamente com o método "requestMatchers(HttpMethod.<método>, <path pattern>).permitAll()" para dizer ao Spring para ignorar a autenticação/autorização em caminhos específicos com métodos HTTP específicos nas requisições. Podemos também utilizar os métodos "anyRequest().authenticated()" para dizermos que qualquer outra requisição além da que marcamos para permitir sem autorização necessite ser validada a autorização.
+
+Importante lembrar que temos vários métodos que podemos encadear, como o "hasRole(<String role>)", que só vai autorizar aquela requisição para um usuário que tiver a role especificada no parâmetro. Também podemos fazer isso usando o MethodSecurity, por meio da annotation @Secured("<Role>") nos próprios métodos que queremos que só quem tenha uma role específica possa acessar. Bom lembrar que para habilitar o MethodSecurity, precisamos especificar isso na nossa SecurityConfiguration com a annotation @EnableMethodSecurity(securedEnabled = true).
+
+Assim especificamos ao Spring que o usuário tem que estar autorizado para fazer várias requisições, mas mesmo mandando o token e estando autorizado isso não irá funcionar, pois ainda não falamos para o Spring que ele deve fazer essa autorização nas requisições.
+
+Para fazer isso, no nosso Filter precisamos usar a classe SecurityContextHolder, que é uma classe do Spring que nos dá possibilidade de forçarmos algumas coisas do nosso contexto de segurança, como forçar que o usuário está autenticado. Exemplo de uso:
+
+"SecurityContextHolder.getContext().setAuthentication(<Authentication>);"
+
+Como visto no exemplo acima, temos que passar um objeto Authentication como parâmetro para o último método. Podemos criar um objeto desse tipo utilizando o construtor da classe UsernamePasswordAuthenticationToken, que recebe 3 parâmetros:
+
+- principal: o objeto a ser autenticado, no nosso caso o usuário.
+- credentials: as credenciais. Se estivemos passando o objeto em si a ser autenticado, podemos passar esse parâmetro como null.
+- authorities: aquela lista de autoridades do usuário.
+
+Assim temos o nosso objeto Authentication que podemos passar para o método "setAuthentication();", agora forçando o Spring a fazer a autenticação se estiver tudo correto.
+
+Só que mesmo fazendo isso ainda não funciona, ele continua dando 403 para tudo. Isso acontece pois o filtro do próprio Spring é chamado antes do nosso, ou seja, o Filter do Spring vê que não estamos logados e devolve 403 direto, nem chega no nosso Filter. Para mudar isso precisamos mudar a ordem dos filtros.
+
+Para mudar a ordem dos filtros, basta colocarmos mais um método no nosso método que retorna o SecurityFilterChain, que é o:
+
+"addFilterBefore(<Filter atrás>, <Filter na frente>)"
+
+Precisamos passar como primeiro parâmetro o nosso filtro (precisamos de uma instância dele, por isso devemos usar a injeção de dependências) e como segundo parâmetro o filtro que o Spring usa automaticamente, que é o UsernamePasswordAuthenticationFilter, assim fazendo com que o nosso filtro seja executado antes dele.
+
+============DATAS NA REQUISIÇÃO============
+
+Quando vamos receber datas na requisição, que irá ser colocada em um campo do tipo LocalDateTime no nosso DTO, precisamos receber uma String que representa uma data no formato correto que o Spring entende.
+
+Esse formato é:
+
+"<AAAA-MM-DD>T<HH:mm:SS>"
+
+Por exemplo:
+
+"2023-02-27T10:00"
+
+Perceba que os segundos são opcionais, assim como o tempo que vem após o "T".
+
+Importante saber que podemos validar no nosso DTO se a data recebida na requisição é uma data no futuro, o que é muito útil.
+
+Para isso, basta colocarmos a annotation @Future do Spring Validation no nosso campo que estará a data.
+
+Podemos alterar o padrão de Strings de datas do Spring, assim podendo utilizar outro padrão de nossa escolha nas requisições.
+
+Para isso utilizamos:
+
+"@JsonFormat(pattern = <novo padrão>)"
+
+Por exemplo:
+
+@JsonFormat(pattern = "dd/MM/yyyy HH:mm")
+
+Bem intuitivo.
+
+============RELACIONAMENTOS EM ENTITIES============
+
+O Spring Data JPA e o JPA em si nos fornecem diversas annotations para trabalharmos com nossas entidades. Entre elas temos as annotations que nos permitem trabalhar com relacionamentos entre as nossas entidades.
+
+Não irei entrar em detalhes sobre cada uma delas, mas é importante lembrar que:
+
+- Todas elas vêm por padrão com o FetchType.LAZY, exceto as @ManyToOne e @OneToOne;
+- A primeira palavra de todas elas sempre se refere à entidade na qual estamos estabelecendo o relacionamento, isto é, se utilizamos a annotation @ManyToOne, estamos dizendo ao Spring que uma instância da nossa entidade terá apenas uma instância da entidade em questão, já essa instância da outra entidade poderá ter várias instâncias da nossa entidade com relacionamento com ela.
+
+Importante saber que o FetchType especifica se os relacionamentos serão carregados mesmo sem o uso deles ou não, onde com o FetchType.LAZY não serão e com o FetchType.EAGER serão.
+
+============@JsonAlias({<aliases...>})============
+
+É uma annotation que nos permite definir nomes alternativos para campos do nosso DTO que irá receber dados do corpo da requisição, assim fazendo com que mesmo que a aplicaçõa cliente envie os dados com atributos com nomes diferentes, mapeamos os nomes usados para os atributos corretos do nosso DTO.
+
+Por poder receber um array como parâmetro, podemos ter vários aliases para um só atributo do DTO, o que é muito bom.
+
+============RESPONSABILIDADE CONTROLLER============
+
+Os controllers devem apenas controlar o fluxo de execução, isto é, não devem ter regras de negócio, lógicas, cálculas dentro deles, apenas fazer o fluxo do que chamar e que resposta retornar dependendo do que acontecer.
+
+Para aplicarmos regras de negócio e etc, temos que utilizar uma classe @Service.
+
+============ALL ARGS CONSTRUCTOR============
+
+Até agora não havia utilizado o @AllArgsConstructor de nenhuma entidade, então não sabia muito bem a utilidade dele, mas agora descobri.
+
+O @AllArgsConstructor é muito útil quando precisamos passar diversos objetos, que podem ser entidades JPA também, para construir o nosso objeto, uma vez que para termos os objetos que serão passados nesse construtor, temos que ter alguma lógica de busca das entidades nos seus respectivos repositories, pois não podemos receber um objeto instanciado no corpo de uma requisição, e fazer essa lógica de inicialização do objeto diretamente dentro da entidade em que criaríamos o construtor seria uma má prática.
+
+============VALIDAÇÕES DE INTEGRIDADE============
+
+As vezes precisamos checar se algum valor recebido no corpo da requisição é íntegro, ou seja, mesmo que esteja válido no padrão que colocamos no Spring Validation, precisamos checar se aquele valor realmente existe no nosso banco de dados, por exemplo.
+
+Se recebemos um id de um paciente e precisamos pegar esse paciente no repository, primeiro precisamos checar se existe um paciente com aquele id.
+
+Para isso temos alguns métodos de verificação nos repositories, um deles sendo o "existsById(Long id);", que checa se existe um registro no banco de dados com o id passado por parâmetro.
+
+============QUERIES PERSONALIZADAS NO BANCO============
+
+As vezes podemos precisar de queries personalizadas no nosso banco para buscar entidades com filtros mais complexos dos que conseguimos fazer apenas utilizando o padrão de nomenclatura dos repositories.
+
+Para isso utilizamos a annotation @Query(<JPQL query>) em cima do método que criamos.
+
+Essa annotation nos permite fazer queries personalizadas utilizando a JPQL (Java Persistence Query Language), uma linguagem de query aos bancos de dados que nos permite escrever em uma sintaxe onde podemos utilizar valores dinâmicos para atributos e respeitando os nomes dos atributos da entidade JPA em si, mesmo que sejam diferentes no banco de dados.
+
+Uma query de exemplo:
+
+@Query("""
+                select m from Medico m
+                where
+                m.ativo = 1
+                and
+                m.especialidade = :especialidade
+                and
+                m.id not in(
+                        select c.medico.id from Consulta c
+                        where
+                        c.data = :data
+                )
+                order by rand()
+                limit 1
+                """)
+
+Podemos perceber que criamos uma referência com o nome "m" para o médico, onde para acessar os atributos apenas utilizamos um "." com o nome do atributo que queremos em seguida.
+Também podemos perceber que temos alguns atributos com o sinal ":" antes do nome quando estamos fazendo comparações. Esses atributos recebem este sinal porque são atributos dinâmicos que recebemos por parâmetro no método, e usamos esta sintaxe para utilizarmos o valor deles e não um valor estático.
+
+O resto é bem parecido com SQL, um conhecimento que é bom ter e preciso estudar mais sobre, além de estudar o JPA e o JPQL em si.
+
+É importante lembrar que quando precisamos fazer uma filtragem diferente dos registros no banco para conseguirmos uma ou mais instâncias de entidades, também podemos fazer a lógica no próprio Java, mas isso não é uma boa prática, levando em conta que os bancos de dados já são muito mais otimizados para aplicar esses filtros, assim se tornando uma boa prática realizar esta filtragem a partir da query no banco mesmo.
+
+============VALIDAÇÕES DE REGRAS DE NEGÓCIO============
+
+É comum que a gente tenha diversas regras de negócio para implementar no nosso código, o que se formos fazer com vários ifs no método principal da funcionalidade vai se tornar algo gigantesco, de muito difícil manutenção e muito difícil de adicionar novas funcionalidades, se necessário. Por isso devemos isolar cada validação em uma classe de validação separada, assim seguindo as boas práticas.
+
+Devemos colocar a annotation @Component nessas novas classes de validação, para assim o Spring saber que deve carregar aquelas classes no projeto.
+
+Importante saber que desta forma teríamos que ter uma instância de cada uma dessas classes no nosso @Service, o que não é nada prático e deixaria o nosso código difícil de dar manutenção.
+
+Para solucionar este problema, devemos também criar uma interface que as nossas classes de validação irão implementar, sempre implementando a validação de cada classe no mesmo método da interface, para assim conseguirmos utilizar o polimorfismo.
+
+Com todos os nossos componentes de validação implementando a interface que criamos, basta termos uma List<<interface que criamos>> com a annotation @Autowired, que assim o Spring irá instanciar dentro dessa lista todos os nossos componentes que implementam a interface que criamos, assim nos possibilitando fazer um "forEach();" que irá aplicar todas as validações a partir do nosso DTO.
+
+============SOLID============
+
+É uma sigla que representa 5 princípios de boa prática em programação.
+
+Single Responsibility Principle (Princípio da Responsabilidade Única)
+Open-Closed Principle (Princípio Aberto-Fechado)
+Liskov Substitution Principle (Princípio da Substituição de Liskov)
+Interface Segregation Principle (Princípio da Segregação de Interface)
+Dependency Inversion Principle (Princípio da Inversão de Dependência)
+
+Irei estudar SOLID com mais atenção posteriormente.
+
+============nativeQuery = true============
+
+Podemos colocar esse parâmetro na annotation @Query, assim dizendo que a query que estamos fazendo não deverá ser feita com os padrões do JPQL, e sim utilizando os padrões do SGBD que estamos utilizando, impossibilitando o uso direto de nossas classes e atributos no query, podendo apenas utilizar essas coisas como parâmetros dinâmicos.
+
+Isso pode ser muito interessante quando queremos utilizar uma funcionalidade específica do SQL do SGBD que estamos utilizando, como a função DATE(), por exemplo.
+
+============DATE() MYSQL============
+
+Podemos usar essa função do MySQL para transformarmos uma data com informação de horário para uma sem informação de horário, assim fazendo com que possamos comparar essa data com outra checando apenas a data em si.
+
+============DOCUMENTAÇÃO COM SpringDoc============
+
+Sempre precisamos fazer uma documentação da nossa API, para assim deixarmos claro o funcionamento dela para outras pessoas que forem desenvolver aplicações que integrem com a nossa API.
+
+Para isso não precisamos escrever manualmente a documentação em um Google Docs da vida, existem algumas ferramentas que são capazes de gerar documentações com base no nosso código, como o SpringDoc.
+
+Só de adicionarmos a dependência do SpringDoc no nosso projeto ela já disponibiliza algumas URLs novas, sendo elas:
+
+- "/swagger-ui.html"
+- "/v3/api-docs"
+
+A URL do Swagger disponibiliza uma interface bonita com diversas informações sobre a nossa API, mostrando todos os controllers, os métodos HTTP aceitos e, inclusive, deixando a gente testar eles como se estivéssemos no Insomnia. Importante lembrar que por padrão essa interface não vem com a opção de colocarmos tokens na requisição, mas isso é algo que podemos mudar, assim como diversas outras coisas.
+
+A URL que finaliza com "api-docs" retorna um JSON com muitas informações sobre a nossa API e o funcionamento dela, dando até a possibilidade de usarmos esse JSON para gerar uma aplicação cliente automaticamente (não faço ideia de como isso é feito, mas é bom saber que existe a possibilidade).
+
+É importante lembrarmos que como estamos utilizando o Spring Security no nosso projeto, as URLs necessitam de autenticação por padrão, ou seja, essas URLs do SpringDoc também precisarão de autenticação para serem acessadas, mas para mudar isso basta mexermos no nosso SecurityFilterChain. É bom liberarmos a URL "/swagger-ui/**" e a "/v3/api-docs/**, para assim liberar todas URLs onde estarão o JS, CSS, etc. que o Swagger UI vai utilizar para criar a interface.
+
+O SpringDoc utiliza a especificação de documentação de APIs OpenAPI, que veio depois do Swagger e está em constante evolução, assim criando um padrão de como APIs devem ser documentadas, sempre em formato yaml ou JSON.
+
+============AUTORIZAÇÃO NO SWAGGER UI============
+
+Para colocarmos a opção de mandarmos o token na requisição, precisamos fazer algumas configurações adicionais, ou seja, precisamos de uma classe @Configuration.
+
+Dentro dessa classe @Configuration, precisamos retornar um @Bean do tip  OpenAPI que podemos construir com a própria classe OpenAPI, usando a palavra chave "new" e colocando diversos métodos que irão mexer na configuração desse @Bean.
+
+Como são várias configurações que podem ser feitas, não irei narrar todas, mas para esse caso específico o código é este:
+
+    @Bean
+     public OpenAPI customOpenAPI() {
+         return new OpenAPI()
+                        .components(new Components()
+                            .addSecuritySchemes("bearer-key",
+                            new SecurityScheme().type(SecurityScheme.Type.HTTP).scheme("bearer").bearerFormat("JWT")));
+    }
+
+Além de fazermos essa configuração, precisamos especificar em quais métodos ou controllers serão exigidos essa autenticação, para assim o SpringDoc saber onde colocar essa funcionalidade de mandar o token no Header.
+
+Fazemos isso com as annotations:
+
+"@SecurityRequirement(name = "bearer-key")"
+
+ou
+
+"@Operation(security = { @SecurityRequirement(name = "bearer-key") })"
+
+Importante lembrarmos que qualquer coisa que precisamos fazer utilizando alguma ferramenta, provavelmente encontraremos como fazer olhando na documentação e pesquisando por termos que remetem o que queremos.
+
+Essa interface do Swagger UI é muito boa e muito interessante, até tornando-se melhor de utilizar do que o próprio Insomnia.
+
+Podemos fazer diversas outras configurações no nosso @Bean OpenAPI, para colocar título, descrição, licença, outras informações, enfim. Para saber como fazer essas coisas, basta olhar na documentação:
+
+https://spec.openapis.org/oas/latest.html#schema
+
+============TESTE NA API============
+
+É importante saber o que é importante ser testado na nossa API. No caso, coisas que sempre são importantes de serem testadas são:
+
+- Controllers
+- Repositories
+- Regras de negócio
+
+Essas três coisas sempre deverão ser testadas, pois são o coração da nossa API. Lembrando que nem tudo nessas coisas precisa ser testado, apenas as coisas que têm uma complexidade maior e o resultado fica menos previsível.
+
+Quando iniciamos um projeto Spring pelo Spring Initializr, ele já vem com a dependência padrão de testes do Spring, que conta com o JUnit, o Mockito (biblioteca para fazer mocks), o Hamcrest e o AssertJ, ou seja, já temos tudo o que precisamos para fazer testes automatizados na nossa API.
+
+Para fazer testes precisamos de uma classe de testes que vai testar uma ou mais funcionalidades de uma classe, isso não muda no Spring. Devemos criar a classe de teste com o mesmo nome da classe a ser testada, só que finalizando com "Test". Além disso, temos que criar as packages na pasta "test" da mesma forma que temos na pasta "main" (só para os pacotes das classes que formos testar). Devemos marcar os métodos de teste com @Test, da mesma forma que faríamos normalmente com JUnit.
+
+============TESTES EM REPOSITORIES============
+
+Para fazermos testes em repositories precisamos informar ao Spring que aquela classe de teste será para essa finalidade. Para isso marcamos a classe com a annotation @DataJpaTest.
+
+Por padrão, quando executamos um teste com essa annotation, o Spring irá tentar executar os testes com um banco de dados em memória, por exemplo o H2. Se não tivermos a dependência de um banco desses no nosso projeto, já acontecerá um erro logo de cara.
+
+Ter um banco de dados em memória apenas para fazer os testes pode ser uma alternativa boa, levando em conta que a performance será bem melhor, mas, por não ser o mesmo banco de dados que estamos utilizando no nosso projeto, pode ser que os testes não sejam tão fieis assim, onde algo que daria certo em um teste poderia não dar em produção.
+
+Podemos mudar esse padrão, para assim o Spring utilizar o banco de dados do projeto nos testes também, o que será o que faremos no curso.
+
+Fazemos isso marcando a classe de teste com a annotation:
+
+"@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)"
+
+Dessa forma dizemos ao Spring para não trocar o banco de dados ao fazer testes. Também precisamos levar em consideração o fato de que, dessa forma, além de os testes serem feitos com o mesmo banco (o MySQL nesse caso), os testes serão feitos exatamente com o mesmo banco, ou seja, com todos os registros que já estão nele, o que não é uma ideia muito legal. Precisamos ter um banco de dados do mesmo tipo do que usamos no projeto, só que focado somente para testes. Para isso podemos criar outro banco de dados no mesmo servidor que já temos, onde as mesmas migrations já serão rodadas.
+
+Para especificarmos que nos testes o Spring deve se conectar com o banco de testes e não o padrão, devemos criar um arquivo:
+
+"application-<String>.properties"
+
+Esse arquivo irá sobrescrever as propriedades que estão no arquivo "application.properties" que colocarmos nele, mas ainda vai ler dele as que não estiverem sobrescritas nesse arquivo novo.
+
+Para usarmos esse arquivo nas classes de teste, precisamos utilizar a annotation "@ActiveProfiles(<String que colocamos após o traço>)". Dessa forma dizemos ao Spring para usar este perfil, ou seja, utilizar as propriedades definidas no arquivo que criamos em cima das propriedades padrão do projeto.
+
+Nos métodos de teste do repository, precisaremos utilizar os métodos do repository, o que fazemos injetando ele na classe de teste normalmente com o @Autowired.
+
+Além disso, precisamos descrever bem os cenários. Para isso, utilizamos a annotation "@DisplayName(<String descritiva do cenário>)", assim podendo utilizar um nome qualquer para o método em si.
+
+Para fazermos os nossos asserts no test, devemos usar os métodos de assert dos respectivos pacotes que temos no módulo padrão de testes do Spring. Sempre devemos ficar atentos a isso.
+
+Como estamos utilizando um banco de dados para teste e não temos nenhum registro nele, para fazer os testes que precisamos fazer vamos ter que inserir registros no banco a cada teste que formos fazer. Para isso, podemos usar um TestEntiyManager, um EntityManager específico para testes que podemos injetar na classe, utilizando o método "persist()" dele para adicionar os registros no banco. Também é interessante termos métodos para padronizar a criação das entidades a serem persistidas. O TestEntityManager faz com que cada registro adicionado no método de teste seja apagado após a execução, fazendo com que no próximo teste os registros não existam.
+
+Os testes são divididos em três partes:
+
+1. Given / Arrange:
+
+Onde nós criamos todos os registros e coisas que serão utilizadas no teste.
+
+2. When / Act: 
+
+Onde executamos a ação a ser testada.
+
+3. Then / Assert:
+
+Onde checamos se nossa expectativa de resultado bateu ou não.
+
+============TESTES EM CONTROLLERS============
+
+Para fazermos testes em controllers é um pouco diferente do processo de fazer testes em repositories, pois temos que ter o contexto completo do Spring na nossa classe de teste, utilizando a annotation @SpringBootTest acima da classe para isso.
+
+Temos duas alternativas para fazer os testes:
+
+1. Fazer um teste de integração, onde o servidor realmente sobe e tudo o que fazemos acontece realmente como se fosse em produção, só que com um banco de testes e etc.
+2. Fazer um teste de unidade utilizando "mocks", onde testaremos realmente só o controller e o fluxo dele, sem precisar subir todo o projeto, executando tudo em uma simulação.
+
+As duas alternativas são válidas e têm seus prós e contras, mas como normalmente isolamos os testes de regras de negócio e persistência, acabamos fazendo  os testes do controller com mocks mesmo.
+
+Para utilizarmos um mock que será responsável por simular a requisição ao nosso controller, utilizamos a classe MockMvc, injetando-a com o @Autowired. Para conseguirmos injetar essa dependência na nossa classe, devemos marcar a classe com a annotation @AutoConfigureMockMvc, assim fazendo o Spring ser capaz de injetá-la.
+
+Tendo o MockMvc, podemos utilizar o método "perform(<MockHttpServletRequestBuilder>)", que é o método que faz a simulação da requisição. Precisamos passar como parâmetro um método mock que irá fazer a requisição com o método HTTP de nossa escolha. Conseguimos esses métodos a partir da classe MockMvcRequestBuilders, que tem vários métodos estáticos com essa finalidade. Podemos pegar o retorno dessa requisição com os métodos "andReturn()" e "getResponse()", sendo esse retorno um MockHttpServletResponse. Após isso, podemos comparar o valor do status dessa resposta com um valor de status que esperávamos. Importante lembrar que podemos pegar o status que quisermos para comparar usando o HttpStatus.<enum>.value().
+
+Como queremos testar a funcionalidade do controller quando o usuário está autorizado a fazer a requisição também, precisamos assinalar o método com a annotation @WithMockUser, assim o Spring fará com que nessa simulação seja utilizado um usuário fictício que está autorizado.
+
+Para levarmos um corpo na nossa requisição mock, temos que encadear o método que vai buildar a requisição com o método HTTP com alguns métodos, como:
+
+- "contentType(<MediaType>):
+
+    Neste método adicionamos o Header "Content-Type" na nossa requisição, para assim especificar o tipo do corpo dela (na maioria dos casos é JSON).
+
+    Para especificar qual é este tipo do conteúdo, precisamos passar como parâmetro para o método um enum MediaType.<enum>, assim padronizando os tipos de conteúdo aceitos. No caso do JSON o enum é "APPLICATION.JSON".
+
+- "content(<JacksonTester<DTO>>)":
+
+    Neste método adicionamos realmente o corpo da nossa requisição.
+
+    Como o corpo das requisições é representado por DTOs no nosso projeto, precisamos passar o respectivo DTO da requisição por parâmetro desse método. Mas tem um porém, quando estamos enviando a requisição para a API, não passamos diretamento o DTO em questão na requisição, é o Spring que transforma o corpo da requisição no nosso DTO. Nesse caso, temos que fazer o processo inverso, transformando o nosso DTO em um corpo válido para a requisição. Para isso, utilizamos a classe JacksonTester<DTO>, onde temos o método "write(<DTO>);", onde passamos um DTO do tipo especificado nos Generics do JacksonTester e em seguida utilizamos o método "getJson();" para pegar a String JSON do corpo da requisição.
+
+Utilizando estes métodos, ao disparar a requisição mock teremos um corpo sendo enviado nela também e poderemos comparar o corpo da resposta com um JSON esperado, que podemos criar com o JacksonTester também, só que dessa vez com o DTO que é devolvido no retorno.
+
+Importante lembrar que para podermos injetar o JacksonTester na classe de testes temos que anotá-la com a annotation @AutoConfigureJsonTesters, assim falando para o Spring configurá-lo automaticamente.
+
+Importante sabermos também que mesmo disparando uma requisição mock, como o controller que recebe as requisições provavelmente tem algum @Bean de service ou repository, ele irá realmente injetar esse bean, ou seja, mesmo sendo uma requisição mock, irão ser aplicadas as regras de negócio e as ações serão feitas no banco. Para prevenir isso, devemos adicionar a dependência que está causando isso na própria classe de testes, só que com a annotation @MockBean, o que fará com que essa dependência seja um mock, e não o objeto real.
+
+Tendo essa dependência "mockada", nenhum método que seria chamado dela no controller irá funcionar, irá apenas retornar null. Para conseguirmos fazer com que esse método de fato faça algo que nós precisamos que seja feito para o teste, devemos usar o Mockito. Os métodos que iremos usar do Mockito são:
+
+"when(<método da dependência mock>(<params>)).thenReturn(<DTO>);"
+
+Dessa forma definimos que quando o método do bean mock for chamado, ele irá retornar o DTO que definimos no "thenReturn();", assim podendo comparar o retorno com o esperado.'
+
+============BUILD DO PROJETO============
+
+Quando fazemos build do nosso projeto para produção é muito importante que criemos outro profile, onde as propriedades de conexão com banco de dados, usuário, senha, etc. estejam todas sendo lidas de variáveis de ambiente e todas outras propriedades que não se aplicam ao ambiente de produção sejam sobrescritas.
+
+Para buildar o nosso projeto, basta executarmos a ação "package" do menu do Maven no IntelliJ, o que irá gerar o .jar na nossa pasta target. Importante lembrar que o build só ocorre de fato se não acontecer nenhum erro e todos os testes que fizemos passarem, sem exceção.
+
+Para rodarmos a nossa aplicação com o arquivo .jar é o mesmo processo que quando vamos rodar qualquer .jar, basta executar no terminal o comando:
+
+"java -jar <caminho do arquivo>"
+
+Dessa forma já temos a aplicação rodando, mas com o profile default.
+
+Para mudar o profile quando subirmos a aplicação, precisamos passar um parâmetro que diz qual profile queremos usar no comando em que rodamos a aplicação. 
+
+Esse parâmetro é:
+
+"-Dspring.profiles.active=<profile>"
+
+Importante lembrarmos que esse "-D" irá aparecer em qualquer parâmetro que queremos passar, ele que dirá que o que estamos digitando deve ser usado pela aplicação. Inclusive, é dessa forma que podemos passar variáveis de ambiente por parâmetro, não precisamos delas necessariamente no sistema operacional.
+
+Exemplo:
+
+"-D<nome da variável>=<valor que queremos>"
+
+Podemos também gerar um .war em vez de um .jar, mas normalmente fazemos o build com o .jar mesmo. Para isso, algumas alterações devem ser feitas na classe main do projeto e no arquivo pom.xml, mas basta dar uma googlada para saber exatamente como fazer, se for necessário.
+
+Podemos também builda uma Native Image do nosso projeto, um arquivo binário que não depende da JVM para ser executado, mas que ainda assim terá os recursos dela. O Spring Boot 3 dá suporte a isso e é relativamente simples de gerar esse arquivo binário, fazendo o uso do GraalVM (precisamos ter ele instalado na máquina) e um plugin do maven que dá suporte à ele. Para saber exatamente como usar, podemos olhar no documentação, assim como pesquisar sobre, pois é um recurso bem interessante, mas que não irei utilizar agora.
